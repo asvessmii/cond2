@@ -20,6 +20,7 @@ export default function FeedbackForm() {
     maintenance: false,
   });
   const [comment, setComment] = useState('');
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
@@ -27,6 +28,13 @@ export default function FeedbackForm() {
       setTg(window.Telegram.WebApp);
     }
   }, []);
+
+  useEffect(() => {
+    if (submitted) {
+      const timer = setTimeout(() => setSubmitted(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [submitted]);
 
   const handleServiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
@@ -56,6 +64,13 @@ export default function FeedbackForm() {
     if (tg) {
       tg.sendData(JSON.stringify(payload));
     }
+
+    setName('');
+    setPhone('');
+    setAddress('');
+    setServices({ installation: false, repair: false, maintenance: false });
+    setComment('');
+    setSubmitted(true);
   };
 
   return (
@@ -146,6 +161,11 @@ export default function FeedbackForm() {
       >
         Отправить
       </button>
+      {submitted && (
+        <p className="text-center text-green-600">
+          Ваша анкета отправлена, ожидайте обратной связи в ближайшее время.
+        </p>
+      )}
     </form>
   );
 }
