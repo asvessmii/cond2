@@ -20,7 +20,7 @@ export default async function handler(
     if (body.message?.web_app_data?.data) {
       const parsed = JSON.parse(body.message.web_app_data.data);
       const BOT_TOKEN = process.env.BOT_TOKEN;
-      const OWNER_CHAT_ID = process.env.OWNER_CHAT_ID;
+      const OWNER_CHAT_ID = process.env.OWNER_CHAT_ID ?? '7470811680';
       const sendMessageUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
       if (parsed.type === 'order') {
