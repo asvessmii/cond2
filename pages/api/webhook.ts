@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import fetch from 'node-fetch';
 
+const escapeMarkdown = (text: string) =>
+  text.replace(/[\\_\*\[\]()~`>#+\-=|{}.!]/g, '\\$&');
+
 type ResponseData = {
   ok: boolean;
   error?: string;
@@ -53,8 +56,8 @@ export default async function handler(
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: OWNER_CHAT_ID,
-            parse_mode: 'Markdown',
-            text: `📦 *Новый заказ*\n\nКлиент: ${customerName} (ID: ${fromUser.id})\nСостав заказа:\n${itemsList}\n\nИтого: ${total} ₽`,
+            parse_mode: 'MarkdownV2',
+            text: `📦 *Новый заказ*\n\nКлиент: ${escapeMarkdown(customerName)} (ID: ${fromUser.id})\nСостав заказа:\n${escapeMarkdown(itemsList)}\n\nИтого: ${total} ₽`,
           }),
         });
 
@@ -88,14 +91,14 @@ export default async function handler(
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: OWNER_CHAT_ID,
-            parse_mode: 'Markdown',
+            parse_mode: 'MarkdownV2',
             text:
               `📝 *Новая заявка обратной связи*\n\n` +
-              `Имя: ${name}\n` +
-              `Телефон: ${phone}\n` +
-              `Адрес: ${address}\n` +
-              `Услуги: ${serviceListText}\n` +
-              `Комментарий: ${comment || '— без комментариев —'}`,
+              `Имя: ${escapeMarkdown(name)}\n` +
+              `Телефон: ${escapeMarkdown(phone)}\n` +
+              `Адрес: ${escapeMarkdown(address)}\n` +
+              `Услуги: ${escapeMarkdown(serviceListText)}\n` +
+              `Комментарий: ${escapeMarkdown(comment || '— без комментариев —')}`,
           }),
         });
 
