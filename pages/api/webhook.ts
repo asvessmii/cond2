@@ -1,5 +1,23 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import fetch from 'node-fetch';
+
+const sendTgMessage = async (
+  url: string,
+  payload: Record<string, unknown>
+) => {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!data.ok) {
+    console.error('Telegram API error:', data);
+  }
+  return data;
+};
+
+const escapeMarkdown = (text: string) =>
+  text.replace(/[\\_\*\[\]()~`>#+\-=|{}.!]/g, '\\$&');
 
 type ResponseData = {
   ok: boolean;
@@ -20,7 +38,15 @@ export default async function handler(
     if (body.message?.web_app_data?.data) {
       const parsed = JSON.parse(body.message.web_app_data.data);
       const BOT_TOKEN = process.env.BOT_TOKEN;
-      const OWNER_CHAT_ID = process.env.OWNER_CHAT_ID ?? '7470811680';
+      const OWNER_CHAT_ID = process.env.OWNER_CHAT_ID;
+
+      if (!BOT_TOKEN || !OWNER_CHAT_ID) {
+        console.error('BOT_TOKEN or OWNER_CHAT_ID not set');
+        return res
+          .status(500)
+          .json({ ok: false, error: 'Server misconfiguration' });
+      }
+
       const sendMessageUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
       if (parsed.type === 'order') {
@@ -34,13 +60,9 @@ export default async function handler(
           .reduce((sum, it) => sum + it.price * it.qty, 0)
           .toFixed(2);
 
-        await fetch(sendMessageUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: body.message.chat.id,
-            text: `✅ Ваш заказ принят!\n\nСостав заказа:\n${itemsList}\n\nИтого: ${total} ₽`,
-          }),
+        await sendTgMessage(sendMessageUrl, {
+          chat_id: body.message.chat.id,
+          text: `✅ Ваш заказ принят!\n\nСостав заказа:\n${itemsList}\n\nИтого: ${total} ₽`,
         });
 
         const fromUser = body.message.from;
@@ -48,14 +70,10 @@ export default async function handler(
           ? `@${fromUser.username}`
           : `${fromUser.first_name || ''} ${fromUser.last_name || ''}`.trim() || fromUser.id;
 
-        await fetch(sendMessageUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: OWNER_CHAT_ID,
-            parse_mode: 'Markdown',
-            text: `📦 *Новый заказ*\n\nКлиент: ${customerName} (ID: ${fromUser.id})\nСостав заказа:\n${itemsList}\n\nИтого: ${total} ₽`,
-          }),
+        await sendTgMessage(sendMessageUrl, {
+          chat_id: OWNER_CHAT_ID,
+          parse_mode: 'MarkdownV2',
+          text: `📦 *Новый заказ*\n\nКлиент: ${escapeMarkdown(customerName)} (ID: ${fromUser.id})\nСостав заказа:\n${escapeMarkdown(itemsList)}\n\nИтого: ${total} ₽`,
         });
 
         return res.status(200).json({ ok: true });
@@ -71,32 +89,24 @@ export default async function handler(
           comment: string;
         };
 
-        await fetch(sendMessageUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: body.message.chat.id,
-            text: `✅ Спасибо за обратную связь, ${name}!\nМы получили вашу заявку и свяжемся с вами в ближайшее время.`,
-          }),
+        await sendTgMessage(sendMessageUrl, {
+          chat_id: body.message.chat.id,
+          text: `✅ Спасибо за обратную связь, ${name}!\nМы получили вашу заявку и свяжемся с вами в ближайшее время.`,
         });
 
         const serviceListText =
           Array.isArray(services) && services.length > 0 ? services.join(', ') : '— не выбрано —';
 
-        await fetch(sendMessageUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: OWNER_CHAT_ID,
-            parse_mode: 'Markdown',
-            text:
-              `📝 *Новая заявка обратной связи*\n\n` +
-              `Имя: ${name}\n` +
-              `Телефон: ${phone}\n` +
-              `Адрес: ${address}\n` +
-              `Услуги: ${serviceListText}\n` +
-              `Комментарий: ${comment || '— без комментариев —'}`,
-          }),
+        await sendTgMessage(sendMessageUrl, {
+          chat_id: OWNER_CHAT_ID,
+          parse_mode: 'MarkdownV2',
+          text:
+            `📝 *Новая заявка обратной связи*\n\n` +
+            `Имя: ${escapeMarkdown(name)}\n` +
+            `Телефон: ${escapeMarkdown(phone)}\n` +
+            `Адрес: ${escapeMarkdown(address)}\n` +
+            `Услуги: ${escapeMarkdown(serviceListText)}\n` +
+            `Комментарий: ${escapeMarkdown(comment || '— без комментариев —')}`,
         });
 
         return res.status(200).json({ ok: true });
