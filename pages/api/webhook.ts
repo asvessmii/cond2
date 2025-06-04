@@ -71,10 +71,11 @@ export default async function handler(
           ? `@${fromUser.username}`
           : `${fromUser.first_name || ''} ${fromUser.last_name || ''}`.trim() || fromUser.id;
 
-        await sendTgMessage(sendMessageUrl, {
-          chat_id: OWNER_CHAT_ID,
-          parse_mode: 'MarkdownV2',
-          text: `📦 *Новый заказ*\n\nКлиент: ${escapeMarkdown(customerName)} (ID: ${fromUser.id})\nСостав заказа:\n${escapeMarkdown(itemsList)}\n\nИтого: ${total} ₽`,
+await sendTgMessage(sendMessageUrl, {
+  chat_id: OWNER_CHAT_ID,
+  parse_mode: 'MarkdownV2',
+  text: `📦 *Новый заказ*\n\nКлиент: ${escapeMarkdown(customerName)} (ID: ${fromUser.id})\nСостав заказа:\n${escapeMarkdown(itemsList)}\n\nИтого: ${total} ₽`,
+});
         });
 
         return res.status(200).json({ ok: true });
@@ -98,16 +99,17 @@ export default async function handler(
         const serviceListText =
           Array.isArray(services) && services.length > 0 ? services.join(', ') : '— не выбрано —';
 
-        await sendTgMessage(sendMessageUrl, {
-          chat_id: OWNER_CHAT_ID,
-          parse_mode: 'MarkdownV2',
-          text:
-            `📝 *Новая заявка обратной связи*\n\n` +
-            `Имя: ${escapeMarkdown(name)}\n` +
-            `Телефон: ${escapeMarkdown(phone)}\n` +
-            `Адрес: ${escapeMarkdown(address)}\n` +
-            `Услуги: ${escapeMarkdown(serviceListText)}\n` +
-            `Комментарий: ${escapeMarkdown(comment || '— без комментариев —')}`,
+await sendTgMessage(sendMessageUrl, {
+  chat_id: OWNER_CHAT_ID,
+  parse_mode: 'MarkdownV2',
+  text:
+    `📝 *Новая заявка обратной связи*\n\n` +
+    `Имя: ${escapeMarkdown(name)}\n` +
+    `Телефон: ${escapeMarkdown(phone)}\n` +
+    `Адрес: ${escapeMarkdown(address)}\n` +
+    `Услуги: ${escapeMarkdown(serviceListText)}\n` +
+    `Комментарий: ${escapeMarkdown(comment || '— без комментариев —')}`,
+});
         });
 
         return res.status(200).json({ ok: true });
