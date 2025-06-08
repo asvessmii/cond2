@@ -27,3 +27,16 @@ npm run dev
 ```
 
 Make sure the Telegram bot webhook points to `<your-host>/api/webhook`.
+The endpoint must be publicly reachable by Telegram. During local development you
+can expose your machine using a tunneling service (for example `ngrok`):
+
+```bash
+ngrok http 3000
+```
+
+Then configure the webhook with your bot token and the public URL printed by
+`ngrok`:
+
+```bash
+curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://<public-url>/api/webhook"
+```
