@@ -38,10 +38,11 @@ export default async function handler(
     if (body.message?.web_app_data?.data) {
       const parsed = JSON.parse(body.message.web_app_data.data);
       const BOT_TOKEN = process.env.BOT_TOKEN;
-      const OWNER_CHAT_ID = process.env.OWNER_CHAT_ID;
+      const OWNER_CHAT_ID =
+        process.env.OWNER_CHAT_ID || process.env.ADMIN_USER_ID;
 
       if (!BOT_TOKEN || !OWNER_CHAT_ID) {
-        console.error('BOT_TOKEN or OWNER_CHAT_ID not set');
+        console.error('BOT_TOKEN or chat id env var not set');
         return res
           .status(500)
           .json({ ok: false, error: 'Server misconfiguration' });
@@ -70,10 +71,16 @@ export default async function handler(
           ? `@${fromUser.username}`
           : `${fromUser.first_name || ''} ${fromUser.last_name || ''}`.trim() || fromUser.id;
 
+        const userInfo = `${escapeMarkdown(customerName)} ${escapeMarkdown(`(ID: ${fromUser.id})`)}`;
+
         await sendTgMessage(sendMessageUrl, {
           chat_id: OWNER_CHAT_ID,
           parse_mode: 'MarkdownV2',
-          text: `📦 *Новый заказ*\n\nКлиент: ${escapeMarkdown(customerName)} (ID: ${fromUser.id})\nСостав заказа:\n${escapeMarkdown(itemsList)}\n\nИтого: ${total} ₽`,
+          text:
+            `📦 *Новый заказ*\n\n` +
+            `Клиент: ${userInfo}\n` +
+            `Состав заказа:\n${escapeMarkdown(itemsList)}\n\n` +
+            `Итого: ${total} ₽`,
         });
 
         return res.status(200).json({ ok: true });
